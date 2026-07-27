@@ -4,7 +4,7 @@
 >
 > 前后端分离架构：FastAPI 后端 + React 前端，支持流式输出与多会话管理。
 
-技术栈：Python · LangChain · 通义千问 · ChromaDB · FastAPI · React · TypeScript · Tailwind CSS
+技术栈：Python · LangChain · ChromaDB · FastAPI · React · TypeScript · Tailwind CSS
 
 <!-- 演示截图：启动后截一张对话+引用展开的图，放到 docs/demo.png 并取消下行注释 -->
 <!--
@@ -14,7 +14,7 @@
 ## ✨ 核心功能
 
 - 📄 **多格式文档上传**：PDF / Markdown / TXT / DOCX，自动解析 + 递归切片 + 向量化入库
-- 🔍 **语义检索**：基于通义 `text-embedding-v3` + ChromaDB，按「意思」而非「关键词」召回
+- 🔍 **语义检索**：基于 Embedding 向量化 + ChromaDB，按「意思」而非「关键词」召回
 - 💬 **多轮对话**：支持上下文追问（"那病假呢？"），每个会话独立历史
 - 🌊 **流式输出**：SSE 流式回答，逐 token 显示
 - 📎 **引用来源**：每条回答附带检索到的文档片段，可追溯
@@ -43,12 +43,12 @@
    └──────┬──────┘   └──┬───────────────┬───────────────────┘
           │             │               │
           │     ┌───────▼───────┐  ┌────▼──────┐
-          │     │  ChromaDB     │  │ 通义千问  │
-          │     │  (向量检索)   │  │ qwen-plus │
+          │     │  ChromaDB     │  │  LLM      │
+          │     │  (向量检索)   │  │ (生成回答)│
           │     └───────▲───────┘  └───────────┘
           │             │
    ┌──────▼──────┐ ┌────┴──────────────────┐
-   │ Embedding  │ │ text-embedding-v3     │
+   │ Embedding  │ │ Embedding 模型        │
    │ (入库)     │ │ (查询向量化 / 入库)   │
    └─────────────┘ └───────────────────────┘
 ```
@@ -59,9 +59,7 @@
 
 ```bash
 cp .env.example .env
-# 编辑 .env，填入通义千问 API Key：
-#   DASHSCOPE_API_KEY=sk-你的key
-# 申请地址：https://bailian.console.aliyun.com/
+# 编辑 .env，填入你的 LLM API Key 与模型配置（支持任意 OpenAI 兼容端点）
 ```
 
 ### 2. 启动后端（FastAPI，端口 8000）
@@ -144,7 +142,7 @@ ragent/
   → 读取会话历史
   → retriever.invoke  （Chroma 相似度检索 top-k）
   → 拼 prompt         （system + 参考资料 + 历史消息 + 当前问题）
-  → ChatOpenAI.stream （qwen-plus 流式生成）
+  → ChatOpenAI.stream （LLM 流式生成）
   → 写入会话历史      （HumanMessage + AIMessage）
 ```
 
@@ -152,9 +150,9 @@ ragent/
 
 | 决策 | 原因 |
 |---|---|
-| 通义千问（OpenAI 兼容模式） | 国内直连、有免费额度、chat + embedding 全能 |
+| OpenAI 兼容协议接入 LLM | 可对接任意兼容端点，切换 provider 只改配置 |
 | ChromaDB | 开发期零配置、本地持久化；生产可换 pgvector/Milvus |
-| 自定义 DashscopeEmbeddings | 绕开 `langchain-openai` 新版与通义的 `contents` 字段不兼容问题 |
+| 自定义 Embeddings 适配层 | 解决部分框架默认 Embedding 实现与厂商 API 的字段兼容问题 |
 | InMemoryHistory | 简历项目聚焦 RAG；生产可换 Redis/SQLite 后端 |
 | React + FastAPI 前后端分离 | 主界面用 React（精致可控），Streamlit 保留作快速演示备选 |
 | Vite proxy `/api` | 开发期前后端分离但同源，零跨域配置 |
