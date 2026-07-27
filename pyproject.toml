@@ -1,0 +1,28 @@
+[project]
+name = "langchain-rag"
+version = "0.1.0"
+description = "基于 LangChain 的 RAG 知识库问答(通义千问 + ChromaDB)"
+requires-python = ">=3.11"
+dependencies = [
+    # LangChain 核心 + OpenAI 兼容客户端(通义走 OpenAI 兼容模式)
+    "langchain>=0.3",
+    "langchain-openai>=0.2",
+    "langchain-community>=0.3",
+    "langchain-chroma>=0.1",
+    # 向量库
+    "chromadb>=0.5",
+    # 文档解析
+    "pypdf>=5.0",
+    "unstructured>=0.15",
+    # Web 后端 + UI
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "streamlit>=1.40",
+    # 工具
+    "python-dotenv>=1.0",
+    "python-multipart>=0.0.9",  # FastAPI 文件上传
+    "reportlab>=5.0.0",
+]
+
+[tool.uv]
+dev-dependencies = []
