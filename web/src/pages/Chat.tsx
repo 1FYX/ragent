@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { Alert, Spinner, Textarea } from 'flowbite-react';
+import { AlertTriangle, BookOpen, MessageCircle } from 'lucide-react';
 import { api, streamAsk } from '../lib/api';
 import type { ChatMessage, StatusResponse } from '../types';
 import { sessionStore, useCurrentSessionId } from '../store';
@@ -129,7 +130,7 @@ export default function ChatPage({ status }: Props) {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === aiId
-                ? { ...m, content: `⚠ ${msg}`, pending: false, isError: true }
+                ? { ...m, content: msg, pending: false, isError: true }
                 : m,
             ),
           );
@@ -147,10 +148,18 @@ export default function ChatPage({ status }: Props) {
         <div className="text-sm font-medium text-slate-300">
           {sessionStore.current()?.title || 'Agent-RAG'}
         </div>
-        <div className="text-xs text-slate-500">
-          {status.docs_count === 0
-            ? '⚠ 知识库为空，将无 RAG 召回'
-            : `📚 ${status.docs_count} 个文档块可检索`}
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          {status.docs_count === 0 ? (
+            <>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+              <span>知识库为空，将无 RAG 召回</span>
+            </>
+          ) : (
+            <>
+              <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+              <span>{status.docs_count} 个文档块可检索</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -259,8 +268,8 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-2xl">
-        💬
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600">
+        <MessageCircle className="h-8 w-8 text-white" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-slate-200">
         开始与知识库对话

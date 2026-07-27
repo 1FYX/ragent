@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, Paperclip } from 'lucide-react';
 import type { Source } from '../types';
 
 /** 引用来源列表（可折叠）。展示检索到的文档片段，便于追溯。 */
@@ -11,8 +12,13 @@ export default function SourceList({ sources }: { sources: Source[] }) {
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
       >
-        <span>{open ? '▾' : '▸'}</span>
-        📎 引用来源（{sources.length}）
+        {open ? (
+          <ChevronDown className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5" />
+        )}
+        <Paperclip className="h-3.5 w-3.5" />
+        引用来源（{sources.length}）
       </button>
       {open && (
         <div className="mt-2 space-y-2">

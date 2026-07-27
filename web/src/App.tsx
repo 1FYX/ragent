@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Spinner } from 'flowbite-react';
+import { Unplug } from 'lucide-react';
 import { api } from './lib/api';
 import type { StatusResponse } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -38,7 +39,8 @@ export default function App() {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900 p-6">
         <div className="max-w-md rounded-2xl border border-red-800 bg-slate-800 p-6 text-center">
-          <h2 className="mb-2 text-lg font-bold text-red-400">🔌 无法连接后端</h2>
+          <Unplug className="mx-auto mb-3 h-10 w-10 text-red-400" />
+          <h2 className="mb-2 text-lg font-bold text-red-400">无法连接后端</h2>
           <p className="text-sm text-slate-300">
             请确认 FastAPI 已启动：
             <code className="mx-1 rounded bg-slate-950 px-2 py-0.5 text-xs">

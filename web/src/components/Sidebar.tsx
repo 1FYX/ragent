@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Badge, Button } from 'flowbite-react';
+import { Plus, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { api } from '../lib/api';
 import type { StatusResponse } from '../types';
 import { sessionStore, useSessions, useCurrentSessionId } from '../store';
@@ -72,7 +73,7 @@ export default function Sidebar({ status, onStatusChange }: Props) {
       {/* 新建会话 */}
       <div className="p-3">
         <Button className="w-full" onClick={handleNewSession}>
-          <span className="mr-1">＋</span> 新建对话
+          <Plus className="mr-1 h-4 w-4" /> 新建对话
         </Button>
       </div>
 
@@ -103,8 +104,9 @@ export default function Sidebar({ status, onStatusChange }: Props) {
                   className={`ml-2 shrink-0 text-xs opacity-0 transition-opacity group-hover:opacity-100 ${
                     s.id === currentId ? 'text-blue-200' : 'text-red-400'
                   }`}
+                  title="删除会话"
                 >
-                  删除
+                  <Trash2 className="h-3.5 w-3.5" />
                 </span>
               </button>
             ))}
@@ -136,7 +138,13 @@ export default function Sidebar({ status, onStatusChange }: Props) {
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || !status.api_key_configured}
         >
-          {uploading ? '上传中...' : '📤 上传文档'}
+          {uploading ? (
+            '上传中...'
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Upload className="h-4 w-4" /> 上传文档
+            </span>
+          )}
         </Button>
 
         {uploadMsg && (
@@ -157,8 +165,9 @@ export default function Sidebar({ status, onStatusChange }: Props) {
 
         {/* Key 状态 */}
         {!status.api_key_configured && (
-          <div className="mt-3 rounded-md border border-amber-700 bg-amber-950/40 p-2 text-[11px] text-amber-300">
-            ⚠ 未配置 API Key，请编辑后端 .env 填入 DASHSCOPE_API_KEY。
+          <div className="mt-3 flex items-start gap-1.5 rounded-md border border-amber-700 bg-amber-950/40 p-2 text-[11px] text-amber-300">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>未配置 API Key，请编辑后端 .env 填入 DASHSCOPE_API_KEY。</span>
           </div>
         )}
       </div>
