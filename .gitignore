@@ -31,3 +31,11 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# 前端（web/）
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+

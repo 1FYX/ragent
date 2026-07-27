@@ -29,10 +29,15 @@ NO_KEY_MSG = (
     "请复制 .env.example 为 .env，填入通义千问 API Key。"
 )
 
-# 允许 Streamlit（默认 8501）跨域调用
+# 允许前端跨域调用（Streamlit 8501 / React dev 5173 / 生产构建）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:8501",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
