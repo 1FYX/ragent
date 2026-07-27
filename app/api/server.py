@@ -127,17 +127,18 @@ async def upload(file: UploadFile = File(...)):
 
 @app.post("/api/ask")
 async def ask(body: dict):
-    """非流式问答。body: {"question": "...", "k": 4}"""
+    """非流式问答。body: {"question": "...", "k": 4, "session_id": "..."}"""
     if not is_api_key_configured():
         raise HTTPException(400, NO_KEY_MSG)
     question = (body or {}).get("question", "").strip()
     if not question:
         raise HTTPException(400, "question 不能为空")
     k = (body or {}).get("k", 4)
+    session_id = (body or {}).get("session_id")
 
     try:
         rag = get_rag()
-        answer, sources = rag.ask(question, k=k)
+        answer, sources = rag.ask(question, k=k, session_id=session_id)
         return {
             "answer": answer,
             "sources": [
@@ -151,19 +152,20 @@ async def ask(body: dict):
 
 @app.post("/api/ask/stream")
 async def ask_stream(body: dict):
-    """流式问答（SSE）。body: {"question": "...", "k": 4}"""
+    """流式问答（SSE）。body: {"question": "...", "k": 4, "session_id": "..."}"""
     if not is_api_key_configured():
         raise HTTPException(400, NO_KEY_MSG)
     question = (body or {}).get("question", "").strip()
     if not question:
         raise HTTPException(400, "question 不能为空")
     k = (body or {}).get("k", 4)
+    session_id = (body or {}).get("session_id")
 
     rag = get_rag()
 
     def gen():
         try:
-            stream = rag.ask_stream(question, k=k)
+            stream = rag.ask_stream(question, k=k, session_id=session_id)
             # 第一个 yield 是引用来源列表
             sources = next(stream)
             yield f"data: {json.dumps({'sources': [{'content': s.page_content[:200]} for s in sources]}, ensure_ascii=False)}\n\n"
@@ -179,6 +181,21 @@ async def ask_stream(body: dict):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/api/sessions/{session_id}/history")
+def get_history(session_id: str):
+    """读取某会话的历史消息。"""
+    rag = get_rag()
+    return {"messages": rag.get_history_messages(session_id)}
+
+
+@app.delete("/api/sessions/{session_id}/history")
+def clear_history(session_id: str):
+    """清空某会话的历史。"""
+    rag = get_rag()
+    rag.clear_history(session_id)
+    return {"ok": True}
 
 
 if __name__ == "__main__":
