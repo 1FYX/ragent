@@ -25,8 +25,8 @@ app = FastAPI(title="LangChain RAG", version="0.1.0")
 
 # 未配置 key 时的统一提示
 NO_KEY_MSG = (
-    "未配置 DASHSCOPE_API_KEY，RAG 功能不可用。"
-    "请复制 .env.example 为 .env，填入通义千问 API Key。"
+    "未配置 LLM_API_KEY，RAG 功能不可用。"
+    "请复制 .env.example 为 .env，填入你的 LLM API Key。"
 )
 
 # 允许前端跨域调用（Streamlit 8501 / React dev 5173 / 生产构建）

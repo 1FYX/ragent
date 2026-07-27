@@ -42,7 +42,7 @@ def clear_history(session_id: str) -> bool:
 
 # —— 顶部标题 ——
 st.title("📚 LangChain RAG 知识库")
-st.caption("通义千问 + ChromaDB · 上传文档 → 多轮提问")
+st.caption("LangChain + ChromaDB · 上传文档 → 多轮提问")
 
 status = get_status()
 if not status.get("ok"):

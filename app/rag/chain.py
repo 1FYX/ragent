@@ -2,7 +2,7 @@
 RAG 核心链：用 LangChain LCEL 编排"检索 → 拼 prompt → 生成"。
 
 设计：
-- Embedding / LLM 走通义千问（OpenAI 兼容模式）
+- Embedding / LLM 走任意 OpenAI 兼容端点（通过环境变量配置）
 - 向量库用 ChromaDB（本地持久化，开发期零配置）
 - 整条链用 LCEL（LangChain Expression Language）组合，可流式输出
 """
@@ -42,11 +42,12 @@ class InMemoryHistory(BaseChatMessageHistory):
 load_dotenv()
 
 # —— 配置（从 .env 读） ——
-BASE_URL = os.getenv("LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
-CHAT_MODEL = os.getenv("CHAT_MODEL", "qwen-plus")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v3")
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIMENSIONS", "1024"))
+# 支持任意 OpenAI 兼容端点，变量名与 .env.example 对应
+BASE_URL = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+API_KEY = os.getenv("LLM_API_KEY", "")
+CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o-mini")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
 PERSIST_DIR = Path(os.getenv("CHROMA_PERSIST_DIR", "./data/chroma"))
 
 
@@ -56,22 +57,22 @@ def is_api_key_configured() -> bool:
 
 
 def _check_api_key() -> None:
-    """真正调用通义前检查；未配置则抛错（被上层捕获转成友好提示）。"""
+    """真正调用 LLM 前检查；未配置则抛错（被上层捕获转成友好提示）。"""
     if not is_api_key_configured():
         raise RuntimeError(
-            "未配置 DASHSCOPE_API_KEY。请复制 .env.example 为 .env，"
-            "填入通义千问的 API Key（https://bailian.console.aliyun.com/ 申请）。"
+            "未配置 LLM_API_KEY。请复制 .env.example 为 .env，"
+            "填入你的 LLM API Key（任意 OpenAI 兼容端点即可）。"
         )
 
 
-class DashscopeEmbeddings(Embeddings):
+class OpenAICompatibleEmbeddings(Embeddings):
     """
-    自定义 Embeddings：直接用原生 openai SDK 调通义。
+    自定义 Embeddings：直接用原生 openai SDK 调用 OpenAI 兼容端点。
 
     为什么不用 langchain_openai.OpenAIEmbeddings？
     因为 langchain-openai 1.4.x 改了 embedding 请求格式（传 contents 而非 input），
-    通义千问只认标准 OpenAI 格式，会报 "contents is neither str nor list of str"。
-    这里直接走原生 SDK，彻底绕开该 bug。
+    部分兼容端点只认标准 OpenAI 格式，会报 "contents is neither str nor list of str"。
+    这里直接走原生 SDK，彻底绕开该兼容性问题。
     """
 
     def __init__(self, model: str, base_url: str, api_key: str, dimensions: int):
@@ -94,10 +95,10 @@ class DashscopeEmbeddings(Embeddings):
         return resp.data[0].embedding
 
 
-def get_embeddings() -> DashscopeEmbeddings:
-    """通义 embedding（原生 SDK 直连，OpenAI 兼容模式）。"""
+def get_embeddings() -> OpenAICompatibleEmbeddings:
+    """Embedding（原生 SDK 直连 OpenAI 兼容端点）。"""
     _check_api_key()
-    return DashscopeEmbeddings(
+    return OpenAICompatibleEmbeddings(
         model=EMBEDDING_MODEL,
         base_url=BASE_URL,
         api_key=API_KEY,
@@ -106,7 +107,7 @@ def get_embeddings() -> DashscopeEmbeddings:
 
 
 def get_llm(temperature: float = 0.7) -> ChatOpenAI:
-    """通义 chat 模型（OpenAI 兼容）。"""
+    """Chat 模型（OpenAI 兼容）。"""
     _check_api_key()
     return ChatOpenAI(
         model=CHAT_MODEL,
