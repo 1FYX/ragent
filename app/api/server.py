@@ -12,11 +12,13 @@ FastAPI 后端：文档上传 + RAG 问答（含流式）。
 """
 import json
 import shutil
+import urllib.parse
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.rag.chain import RAGChain, is_api_key_configured
 from app.rag.loader import load_and_split
@@ -44,6 +46,9 @@ app.add_middleware(
 
 UPLOAD_DIR = Path("./data/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# 把 uploads 目录挂为静态文件，前端可直接访问 /uploads/文件名 下载原文
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # 单例 RAG 链（向量库复用）
 _rag: RAGChain | None = None
@@ -133,6 +138,10 @@ async def upload(file: UploadFile = File(...)):
         chunks = load_and_split(str(save_path))
         if not chunks:
             raise HTTPException(400, "解析得到空内容（可能是扫描版 PDF 或空文件）")
+
+        # 统一 source 为纯文件名（便于后续按文件聚合 + 提供 downloads）
+        for c in chunks:
+            c.metadata["source"] = file.filename
 
         # 入库
         rag = get_rag()

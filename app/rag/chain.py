@@ -7,6 +7,7 @@ RAG 核心链：用 LangChain LCEL 编排"检索 → 拼 prompt → 生成"。
 - 整条链用 LCEL（LangChain Expression Language）组合，可流式输出
 """
 import os
+import urllib.parse
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -201,7 +202,7 @@ class RAGChain:
         return len(docs)
 
     def list_documents(self) -> list[dict]:
-        """返回已上传文档列表（按 source 文件名聚合）：[{source, chunks, preview}]。"""
+        """返回已上传文档列表（按 source 文件名聚合）：[{source, name, chunks, preview, original_url}]。"""
         try:
             all_data = self._vectorstore._collection.get(
                 include=["metadatas", "documents"]
@@ -214,11 +215,14 @@ class RAGChain:
         for doc, meta in zip(all_data.get("documents", []), all_data.get("metadatas", [])):
             source = (meta or {}).get("source", "未知文档")
             if source not in grouped:
+                name = source.split("/")[-1].split("\\")[-1]
                 grouped[source] = {
                     "source": source,
-                    "name": source.split("/")[-1].split("\\")[-1],  # 只取文件名
+                    "name": name,
                     "chunks": 0,
                     "preview": doc.replace("\n", " ").strip()[:80],
+                    # 原文件下载 URL（data/uploads/ 下的文件名）
+                    "original_url": f"/uploads/{urllib.parse.quote(name)}",
                 }
             grouped[source]["chunks"] += 1
         return list(grouped.values())

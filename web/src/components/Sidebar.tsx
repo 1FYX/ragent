@@ -8,6 +8,7 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { StatusResponse } from '../types';
@@ -18,6 +19,7 @@ interface DocItem {
   name: string;
   chunks: number;
   preview: string;
+  original_url: string;
 }
 
 interface Props {
@@ -238,6 +240,15 @@ export default function Sidebar({ status, onStatusChange }: Props) {
                           {d.chunks} 块
                         </div>
                       </div>
+                      <a
+                        href={d.original_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="查看原文"
+                        className="shrink-0 text-slate-600 opacity-0 transition-opacity hover:text-blue-400 group-hover:opacity-100"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
                       <button
                         onClick={() => handleDeleteDoc(d.source)}
                         title="删除该文档"
