@@ -192,6 +192,12 @@ class RAGChain:
             hashlib.md5(d.page_content.encode()).hexdigest()[:16] for d in docs
         ]
         self._vectorstore.add_documents(docs, ids=ids)
+        # 显式持久化（新版 Chroma 不一定自动落盘，确保重启不丢）
+        try:
+            self._vectorstore.persist()
+        except Exception:
+            # 某些版本已内置自动 persist，调用 persist() 会报错，忽略即可
+            pass
         return len(docs)
 
     # —— 检索：top-k 相关文档 ——
