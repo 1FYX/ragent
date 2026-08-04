@@ -200,6 +200,43 @@ class RAGChain:
             pass
         return len(docs)
 
+    def list_documents(self) -> list[dict]:
+        """返回已上传文档列表（按 source 文件名聚合）：[{source, chunks, preview}]。"""
+        try:
+            all_data = self._vectorstore._collection.get(
+                include=["metadatas", "documents"]
+            )
+        except Exception:
+            return []
+
+        # 按 source 聚合
+        grouped: dict[str, dict] = {}
+        for doc, meta in zip(all_data.get("documents", []), all_data.get("metadatas", [])):
+            source = (meta or {}).get("source", "未知文档")
+            if source not in grouped:
+                grouped[source] = {
+                    "source": source,
+                    "name": source.split("/")[-1].split("\\")[-1],  # 只取文件名
+                    "chunks": 0,
+                    "preview": doc.replace("\n", " ").strip()[:80],
+                }
+            grouped[source]["chunks"] += 1
+        return list(grouped.values())
+
+    def delete_document(self, source: str) -> int:
+        """按 source 删除某文档的所有向量，返回删除数量。"""
+        try:
+            before = self._vectorstore._collection.count()
+            self._vectorstore._collection.delete(where={"source": source})
+            try:
+                self._vectorstore.persist()
+            except Exception:
+                pass
+            after = self._vectorstore._collection.count()
+            return before - after
+        except Exception:
+            return 0
+
     # —— 检索：top-k 相关文档 ——
     def as_retriever(self, k: int = 4):
         return self._vectorstore.as_retriever(search_kwargs={"k": k})

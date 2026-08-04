@@ -61,6 +61,19 @@ export const api = {
 
   /** 文档块数 */
   docsCount: () => request<{ count: number }>('/docs-count'),
+
+  /** 已上传文档列表 */
+  listDocuments: () =>
+    request<{ documents: Array<{ source: string; name: string; chunks: number; preview: string }> }>(
+      '/documents',
+    ),
+
+  /** 删除某文档（按 source） */
+  deleteDocument: (source: string) =>
+    request<{ deleted: number; remaining: number }>(
+      `/documents?source=${encodeURIComponent(source)}`,
+      { method: 'DELETE' },
+    ),
 };
 
 /**

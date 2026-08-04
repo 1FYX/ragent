@@ -95,6 +95,25 @@ def docs_count():
     return {"count": count}
 
 
+@app.get("/api/documents")
+def list_documents():
+    """返回已上传文档列表（按文件名聚合）。"""
+    if not is_api_key_configured():
+        raise HTTPException(400, NO_KEY_MSG)
+    rag = get_rag()
+    return {"documents": rag.list_documents()}
+
+
+@app.delete("/api/documents")
+def delete_document(source: str):
+    """按 source 删除某文档的所有向量。?source=文件路径"""
+    if not is_api_key_configured():
+        raise HTTPException(400, NO_KEY_MSG)
+    rag = get_rag()
+    deleted = rag.delete_document(source)
+    return {"deleted": deleted, "remaining": rag._vectorstore._collection.count()}
+
+
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...)):
     """上传文档 → 切片 → 入向量库。"""

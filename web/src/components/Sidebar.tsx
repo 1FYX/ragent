@@ -1,9 +1,24 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Badge, Button } from 'flowbite-react';
-import { Plus, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  Plus,
+  Upload,
+  Trash2,
+  AlertTriangle,
+  FileText,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { api } from '../lib/api';
 import type { StatusResponse } from '../types';
 import { sessionStore, useSessions, useCurrentSessionId } from '../store';
+
+interface DocItem {
+  source: string;
+  name: string;
+  chunks: number;
+  preview: string;
+}
 
 interface Props {
   status: StatusResponse;
@@ -18,6 +33,35 @@ export default function Sidebar({ status, onStatusChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [docs, setDocs] = useState<DocItem[]>([]);
+  const [docsOpen, setDocsOpen] = useState(false);
+
+  // 加载文档列表（status 变化时刷新，即上传/删除后）
+  const refreshDocs = () => {
+    if (!status.api_key_configured) {
+      setDocs([]);
+      return;
+    }
+    api
+      .listDocuments()
+      .then((r) => setDocs(r.documents))
+      .catch(() => setDocs([]));
+  };
+
+  useEffect(() => {
+    refreshDocs();
+  }, [status.docs_count, status.api_key_configured]);
+
+  const handleDeleteDoc = async (source: string) => {
+    if (!confirm('从向量库删除该文档？')) return;
+    try {
+      await api.deleteDocument(source);
+      refreshDocs();
+      onStatusChange();
+    } catch (e: any) {
+      alert('删除失败：' + (e.message || '未知错误'));
+    }
+  };
 
   const handleNewSession = () => {
     sessionStore.create();
@@ -46,6 +90,8 @@ export default function Sidebar({ status, onStatusChange }: Props) {
         text: `✅ ${r.filename}：新增 ${r.chunks} 块，总计 ${r.total}`,
       });
       onStatusChange();
+      setDocsOpen(true); // 上传后自动展开文档列表
+      refreshDocs();
     } catch (err: any) {
       setUploadMsg({ type: 'err', text: err.message || '上传失败' });
     } finally {
@@ -156,6 +202,54 @@ export default function Sidebar({ status, onStatusChange }: Props) {
             }`}
           >
             {uploadMsg.text}
+          </div>
+        )}
+
+        {/* 已上传文档列表 */}
+        {status.api_key_configured && (
+          <div className="mt-3">
+            <button
+              onClick={() => setDocsOpen((v) => !v)}
+              className="flex w-full items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-slate-500 hover:text-slate-300"
+            >
+              {docsOpen ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+              已上传文档（{docs.length}）
+            </button>
+            {docsOpen && (
+              <div className="mt-2 space-y-1.5">
+                {docs.length === 0 ? (
+                  <p className="px-1 text-[11px] text-slate-600">暂无文档</p>
+                ) : (
+                  docs.map((d) => (
+                    <div
+                      key={d.source}
+                      className="group flex items-start gap-2 rounded-md bg-slate-900/40 p-2"
+                    >
+                      <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs text-slate-300" title={d.source}>
+                          {d.name}
+                        </div>
+                        <div className="text-[10px] text-slate-600">
+                          {d.chunks} 块
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteDoc(d.source)}
+                        title="删除该文档"
+                        className="shrink-0 text-slate-600 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
 
